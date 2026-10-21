@@ -9,5 +9,5 @@ export const CONFIG = {
     appId: "1:686085571792:web:ea4e2de3e19c5986f88ad5",
   },
   googleClientId: "686085571792-lsdpdi4u4rk52h5uj87ge2hj3eefs4k7.apps.googleusercontent.com",    // Google Cloud → APIs & Services → Credentials → OAuth client ID (Web)
-  microsoftClientId: "", // portal.azure.com → App registrations → Application (client) ID
+  microsoftClientId: "22c618c9-0897-4c5c-af0d-134b5e9bde4a", // portal.azure.com → App registrations → Application (client) ID
 };
