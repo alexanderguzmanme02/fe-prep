@@ -1,8 +1,9 @@
-import { DATA } from "./data.js";
+import { DATA } from "./data.js?v=2";
 import { CONFIG } from "./settings.js";
 import { DEMO, initStore, signUp, signIn, signOut, resetPassword, loadProfile, saveProfile } from "./store.js";
-import { buildSchedule, finishedUnits, DEFAULT_AVAIL, WEEKDAYS, dayKey, parseDay } from "./scheduler.js";
-import * as cal from "./calendars.js";
+import { buildSchedule, finishedUnits, DEFAULT_AVAIL, WEEKDAYS, dayKey, parseDay, SESSION_VIDEOS } from "./scheduler.js?v=8";
+import { PLAYBOOK, SESSION_TIPS, PLAYLIST_SOURCE, SOURCES } from "./community.js?v=1";
+import * as cal from "./calendars.js?v=5";
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -35,10 +36,55 @@ async function save() {
 }
 
 /* ---------- session content ---------- */
+// Video card: thumbnail that turns into an embedded player when tapped
 const vlink = (id) => {
   const v = DATA.videos[id];
-  return v ? `<a class="vid" href="https://youtu.be/${id}" target="_blank" rel="noopener"><span>${esc(v.title)}</span><small>${esc(v.channel)} · ${esc(v.length)}</small></a>` : "";
+  if (!v) return "";
+  return `<div class="vid">
+    <button type="button" class="thumb" data-yt="${esc(id)}" aria-label="Play ${esc(v.title)}">
+      <img src="https://i.ytimg.com/vi/${esc(id)}/mqdefault.jpg" alt="" loading="lazy"><span class="play" aria-hidden="true">▶</span><span class="len">${esc(v.length)}</span>
+    </button>
+    <div class="vmeta"><b>${esc(v.title)}</b><small>${esc(v.channel)}</small>
+      <a href="https://youtu.be/${esc(id)}" target="_blank" rel="noopener">Open on YouTube ↗</a></div>
+  </div>`;
 };
+
+// Whole-topic playlist: plays in place, starting from its first video
+const plist = (k) => {
+  const t = DATA.topics[k];
+  const id = t?.playlist?.split("list=")[1];
+  if (!id) return "";
+  return `<div class="vid pl">
+    <button type="button" class="thumb plthumb" data-pl="${esc(id)}" data-title="${esc(t.name)} playlist" aria-label="Play the ${esc(t.name)} playlist">
+      <span class="stackico" aria-hidden="true">≡</span><span class="play" aria-hidden="true">▶</span>
+    </button>
+    <div class="vmeta"><b>Full ${esc(t.name)} playlist</b><small>${esc(PLAYLIST_SOURCE)}</small>
+      <a href="${esc(t.playlist)}" target="_blank" rel="noopener">Open on YouTube ↗</a></div>
+  </div>`;
+};
+
+// "From people who passed" box inside a session
+const tipsHtml = (kind) => {
+  const tips = SESSION_TIPS[kind];
+  return tips?.length ? `<aside class="tips"><b>From people who passed</b><ul>${tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></aside>` : "";
+};
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-yt], [data-pl]");
+  if (!b) return;
+  const id = b.dataset.yt;
+  const f = document.createElement("iframe");
+  f.className = "player";
+  f.src = id ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&modestbranding=1`
+    : `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(b.dataset.pl)}&autoplay=1&rel=0`;
+  f.title = id ? DATA.videos[id]?.title || "Video" : b.dataset.title;
+  f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+  f.allowFullscreen = true;
+  b.closest(".vid").classList.add("playing");
+  b.replaceWith(f);
+});
+
+const sessionVideos = (s) => s.videos || SESSION_VIDEOS[s.title] || [];
 
 function unitHtml(it) {
   const u = unitById(it.unit);
@@ -47,7 +93,7 @@ function unitHtml(it) {
   return `<div class="unit">
     <h4>${esc(u.title)}${it.cont ? " <em>(continued)</em>" : ""} <span class="min">${it.min} min</span></h4>
     <ul>${u.focus.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
-    <p class="meta"><b>Handbook:</b> ${t.hb.slice(0, 2).map(([n, p]) => `${esc(n)} ${esc(p)}`).join(" · ")}</p>
+    <p class="meta"><b>Handbook:</b> ${t.hb.slice(0, 2).map(([n, p]) => `${esc(n)} ${esc(p)}`).join(" · ")}${t.playlist ? ` · <a href="${esc(t.playlist)}" target="_blank" rel="noopener">Full topic playlist ↗</a>` : ""}</p>
     ${calc.length ? `<table class="calc"><tbody>${calc.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="key">${esc(b)}</td><td class="pg">p.${esc(c)}</td></tr>`).join("")}</tbody></table>` : ""}
     <div class="vids">${u.videos.map(vlink).join("")}</div>
   </div>`;
@@ -58,9 +104,10 @@ function sessionBody(s) {
     const units = (s.items || []).map(unitHtml).join("");
     const block = s.kind === "block" ? `<p class="note">Second half of the day: timed mixed problems from every topic so far, 3 minutes each, handbook only. Finish with your error log.</p>` : "";
     const routine = `<p class="note">Routine: 15 min handbook lookups → video, finding each formula in the handbook → problems (3 min each, decide by hand or calculator move first) → error log.</p>`;
-    return (units || `<p>Finish unfinished problem sets and redo your error-log problems.</p>`) + block + routine;
+    return (units || `<p>Finish unfinished problem sets and redo your error-log problems.</p>`) + block + routine + tipsHtml(s.kind);
   }
-  return `<ul>${(s.tasks || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
+  const vids = sessionVideos(s);
+  return `<ul>${(s.tasks || []).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>${tipsHtml(s.kind)}${vids.length ? `<div class="vids">${vids.map(vlink).join("")}</div>` : ""}`;
 }
 
 function sessionText(s) {
@@ -76,7 +123,12 @@ function sessionText(s) {
       lines.push("");
     }
     if (s.kind === "block") lines.push("Second half: timed mixed problems from every topic so far.");
-  } else lines.push(...(s.tasks || []).map((t) => `- ${t}`));
+  } else {
+    lines.push(...(s.tasks || []).map((t) => `- ${t}`));
+    for (const v of sessionVideos(s)) if (DATA.videos[v]) lines.push(`Watch: ${DATA.videos[v].title} youtu.be/${v}`);
+  }
+  const tips = SESSION_TIPS[s.kind] || [];
+  if (tips.length) lines.push("", "From people who passed:", ...tips.map((t) => `- ${t}`));
   lines.push("", `Plan: ${location.origin}${location.pathname}`);
   return lines.join("\n");
 }
@@ -93,7 +145,7 @@ function calendarEvents() {
 
 /* ---------- layout ---------- */
 function shell(inner) {
-  const tabs = [["today", "Today"], ["plan", "Plan"], ["topics", "Topics"], ["setup", "Setup"]];
+  const tabs = [["today", "Today"], ["plan", "Plan"], ["topics", "Topics"], ["playbook", "Playbook"], ["setup", "Setup"]];
   app.innerHTML = `
     <header class="top"><div class="bar">
       <span class="brand">FE <b>Prep</b></span>
@@ -144,7 +196,10 @@ function renderSetup() {
   const avail = p.avail || DEFAULT_AVAIL;
   const exam = p.examDate || "";
   const start = p.sessions ? todayKey() : (p.startDate || todayKey());
-  const busy = draftBusy || (p.busy ? { list: p.busy, source: p.busySource } : null);
+  // Busy times by calendar name, so work and personal calendars can be combined
+  if (!draftBusy) draftBusy = { ...(p.busySets || (p.busy?.length ? { [p.busySource || "Calendar"]: p.busy } : {})) };
+  const sets = draftBusy;
+  const names = Object.keys(sets);
   const order = [1, 2, 3, 4, 5, 6, 0];
   shell(`
     <h1>${p.sessions ? "Update your plan" : "Build your plan"}</h1>
@@ -158,7 +213,7 @@ function renderSetup() {
       </section>
       <section class="card">
         <h2>2 · When can you study?</h2>
-        <p class="hint">Typical: 2–4 hours on weekdays and one long day on the weekend for timed practice. Add a second window if your day is split.</p>
+        <p class="hint">Typical: 2–4 hours on weekdays and one long day on the weekend for timed practice. Add a second window if your day is split. One engineer 10 years out of school passed on 2–3 hours on weekdays.</p>
         <div class="tw"><table class="avail"><thead><tr><th>Day</th><th>From</th><th>To</th><th>From</th><th>To</th></tr></thead><tbody>
         ${order.map((d) => {
           const w = avail[d] || [];
@@ -172,15 +227,15 @@ function renderSetup() {
       </section>
       <section class="card">
         <h2>3 · Work around your calendar <span class="opt">optional</span></h2>
-        <p class="hint">The planner reads only when you’re busy, never your event titles, and skips those times.</p>
+        <p class="hint">The planner reads only when you’re busy, never your event titles, and skips those times. Add as many calendars as you like, for example your work Outlook and your personal Gmail.</p>
         <div class="row wraps">
-          <button type="button" id="g-busy" ${CONFIG.googleClientId ? "" : "disabled"}>Connect Google Calendar</button>
-          <button type="button" id="o-busy" ${CONFIG.microsoftClientId ? "" : "disabled"}>Connect Outlook</button>
-          <label class="button" for="ics">Upload .ics file</label><input id="ics" type="file" accept=".ics,text/calendar" hidden>
-          ${busy ? `<button type="button" id="clear-busy" class="link">Clear</button>` : ""}
+          <button type="button" id="g-busy" ${CONFIG.googleClientId ? "" : "disabled"}>${names.some((n) => n.startsWith("Google")) ? "Add another Google Calendar" : "Connect Google Calendar"}</button>
+          <button type="button" id="o-busy" ${CONFIG.microsoftClientId ? "" : "disabled"}>${names.some((n) => n.startsWith("Outlook")) ? "Add another Outlook" : "Connect Outlook"}</button>
+          <label class="button" for="ics">Upload .ics file</label><input id="ics" type="file" accept=".ics,text/calendar" multiple hidden>
         </div>
         ${!CONFIG.googleClientId || !CONFIG.microsoftClientId ? `<p class="hint">${!CONFIG.googleClientId ? "Google" : ""}${!CONFIG.googleClientId && !CONFIG.microsoftClientId ? " and " : ""}${!CONFIG.microsoftClientId ? "Outlook" : ""} connection isn’t switched on for this site yet. Export your calendar as an .ics file and upload it instead.</p>` : ""}
-        <p id="busy-msg" class="msg" role="status">${busy ? `${busy.list.length} busy blocks loaded from ${esc(busy.source)}.` : "No calendar loaded."}</p>
+        ${names.length ? `<ul class="sources">${names.map((n) => `<li><span class="src">${esc(n)}</span><span class="cnt">${sets[n].length} busy blocks</span><button type="button" class="link" data-rm="${esc(n)}">Remove</button></li>`).join("")}</ul>` : ""}
+        <p id="busy-msg" class="msg" role="status">${names.length ? `The plan avoids busy times from ${names.length === 1 ? "this calendar" : `all ${names.length} calendars`}.` : "No calendar loaded."}</p>
       </section>
       <button type="submit" class="primary big">${p.sessions ? "Rebuild my plan" : "Build my plan"}</button>
       ${p.sessions ? `<p class="hint">Rebuilding keeps the sessions you’ve checked off and reschedules everything else from today.</p>` : ""}
@@ -191,27 +246,34 @@ function renderSetup() {
     const e = parseDay($("#exam").value || addDays(todayKey(), 120)).getTime() + DAY;
     return [s, e];
   };
-  const setBusy = (list, source) => { draftBusy = { list, source }; $("#busy-msg").textContent = `${list.length} busy blocks loaded from ${source}.`; };
+  // Keep what's typed in the form when the calendar list re-renders
+  const keepForm = () => {
+    const vals = [...app.querySelectorAll("#setup input:not([type=file])")].map((i) => [i.id, i.type === "checkbox" ? i.checked : i.value]);
+    renderSetup();
+    for (const [id, v] of vals) { const i = document.getElementById(id); if (i) i[typeof v === "boolean" ? "checked" : "value"] = v; }
+  };
+  const uniq = (base) => { let n = base; for (let i = 2; sets[n]; i++) n = `${base} ${i}`; return n; };
+  const addBusy = (name, list) => { sets[name] = list; keepForm(); };
   const guard = () => { if (!$("#exam").value) { $("#busy-msg").textContent = "Set your exam date first, so I know how far ahead to read."; return false; } return true; };
 
   $("#g-busy").addEventListener("click", async () => {
     if (!guard()) return;
-    $("#busy-msg").textContent = "Waiting for Google…";
-    try { const tok = await cal.googleToken(CONFIG.googleClientId); setBusy(await cal.googleBusy(tok, ...range()), "Google Calendar"); }
+    $("#busy-msg").textContent = "Waiting for Google… choose the account to add.";
+    try { const tok = await cal.googleToken(CONFIG.googleClientId); addBusy(uniq("Google Calendar"), await cal.googleBusy(tok, ...range())); }
     catch (e) { $("#busy-msg").textContent = `Google Calendar: ${e.message}`; }
   });
   $("#o-busy").addEventListener("click", async () => {
     if (!guard()) return;
-    $("#busy-msg").textContent = "Waiting for Microsoft…";
-    try { const tok = await cal.outlookToken(CONFIG.microsoftClientId); setBusy(await cal.outlookBusy(tok, ...range()), "Outlook"); }
+    $("#busy-msg").textContent = "Waiting for Microsoft… choose the account to add.";
+    try { const { token, user } = await cal.outlookToken(CONFIG.microsoftClientId, true); addBusy(`Outlook · ${user}`, await cal.outlookBusy(token, ...range())); }
     catch (e) { $("#busy-msg").textContent = `Outlook: ${e.message}`; }
   });
   $("#ics").addEventListener("change", async (e) => {
-    const f = e.target.files[0];
-    if (!f || !guard()) return;
-    setBusy(cal.parseIcs(await f.text(), ...range()), f.name);
+    if (!e.target.files.length || !guard()) return;
+    for (const f of e.target.files) sets[uniq(f.name)] = cal.parseIcs(await f.text(), ...range());
+    keepForm();
   });
-  $("#clear-busy")?.addEventListener("click", () => { draftBusy = { list: [], source: "nothing" }; profile && (profile.busy = []); renderSetup(); });
+  app.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => { delete sets[b.dataset.rm]; keepForm(); }));
 
   $("#setup").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -228,8 +290,8 @@ function renderSetup() {
         if (s && en && en > s) av[d].push({ s, e: en });
       }
     }
-    const bz = draftBusy || { list: p.busy || [], source: p.busySource || "nothing" };
-    profile = { ...(profile || {}), examDate, startDate, avail: av, busy: bz.list, busySource: bz.source, done: profile?.done || {} };
+    const { busySource, ...rest } = profile || {};
+    profile = { ...rest, examDate, startDate, avail: av, busySets: sets, busy: Object.values(sets).flat(), done: profile?.done || {} };
     replan(startDate);
     draftBusy = null;
     await save();
@@ -335,7 +397,7 @@ async function sync(provider) {
   }
   try {
     msg.textContent = `Waiting for ${provider === "google" ? "Google" : "Microsoft"}…`;
-    const token = provider === "google" ? await cal.googleToken(CONFIG.googleClientId) : await cal.outlookToken(CONFIG.microsoftClientId);
+    const token = provider === "google" ? await cal.googleToken(CONFIG.googleClientId) : (await cal.outlookToken(CONFIG.microsoftClientId)).token;
     const write = provider === "google" ? cal.googleWrite : cal.outlookWrite;
     const id = await write(token, events, profile.calendars?.[provider], (n, total) => { msg.textContent = `Adding ${n} of ${total}…`; });
     profile.calendars = { ...(profile.calendars || {}), [provider]: id };
@@ -383,13 +445,30 @@ function renderTopics() {
   const order = ["fluids", "statics", "dyn", "strength", "thermo", "heat", "math", "stats", "econ", "safety", "materials", "elec", "chem", "ethics", "instr"];
   shell(`<h1>Topic guides</h1>
     <p class="hint">Ordered by how many exam questions each carries. Handbook pages are the printed numbers of the FE Reference Handbook 10.6 (add 6 for the PDF page).</p>
+    <p class="warn">Study tactics, books and exam-day tips from people who passed are in the <button type="button" data-view="playbook" class="link">Playbook</button>.</p>
     <div class="card"><h2>Calculator habits (TI-36X Pro)</h2><table class="calc"><tbody>${DATA.habits.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="key">${esc(b)}</td><td class="pg">p.${esc(c)}</td></tr>`).join("")}</tbody></table></div>
     ${order.map((k) => { const t = DATA.topics[k]; return `<details class="card topic"><summary><h2>${esc(t.name)}</h2><span class="q">${esc(t.q)} questions</span></summary>
       <h4>Know these cold</h4><ol>${t.master.map((m) => `<li>${esc(m)}</li>`).join("")}</ol>
       <h4>Handbook</h4><table class="calc"><tbody>${t.hb.map(([n, p]) => `<tr><td>${esc(n)}</td><td class="pg">${esc(p)}</td></tr>`).join("")}</tbody></table>
       <h4>Calculator moves</h4><table class="calc"><tbody>${t.calc.map(([a, b, c]) => `<tr><td>${esc(a)}</td><td class="key">${esc(b)}</td><td class="pg">p.${esc(c)}</td></tr>`).join("")}</tbody></table>
-      <h4>Watch</h4><div class="vids">${t.videos.map(vlink).join("")}</div>
+      <h4>Watch</h4><div class="vids">${plist(k)}${t.videos.map(vlink).join("")}</div>
       <h4>Traps</h4><ul>${t.traps.map((m) => `<li>${esc(m)}</li>`).join("")}</ul></details>`; }).join("")}`);
+}
+
+/* ---------- playbook ---------- */
+function renderPlaybook() {
+  const lists = Object.keys(DATA.topics).filter((k) => DATA.topics[k].playlist);
+  shell(`<h1>Playbook</h1>
+    <p class="hint">How engineers who passed actually did it. ${esc(SOURCES)} The same tips show up inside your sessions.</p>
+    ${PLAYBOOK.map((sec) => `<section class="card">
+      <h2>${esc(sec.title)}</h2>${sec.why ? `<p class="hint">${esc(sec.why)}</p>` : ""}
+      <dl class="tipl">${sec.items.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join("")}</dl>
+    </section>`).join("")}
+    <section class="card">
+      <h2>6 · Topic playlists</h2>
+      <p class="hint">Whole-topic playlists recommended on r/FE_Exam. Tap one to play it here. Best channels, in the order people ranked them: Mark Mattson, Engineering Fundamentals, Gregory Michaelson, Genie Prep, DirectHub, Prepineer.</p>
+      <div class="vids">${lists.map(plist).join("")}</div>
+    </section>`);
 }
 
 /* ---------- boot ---------- */
@@ -398,6 +477,7 @@ function render() {
   if (!profile?.sessions || view === "setup") return renderSetup();
   if (view === "plan") return renderPlan();
   if (view === "topics") return renderTopics();
+  if (view === "playbook") return renderPlaybook();
   return renderToday();
 }
 

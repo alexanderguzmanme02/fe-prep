@@ -63,4 +63,6 @@ Edit `config.js` on GitHub (open the file → pencil icon → paste the values �
 | `store.js` | Firebase sign-in and saved plans (demo mode without keys) |
 | `data.js` | Study content: topics, sessions, videos, calculator moves |
 | `config.js` | Service keys (public identifiers) |
+| `settings.js` | Loads `config.js` fresh on every visit, so key changes show up immediately |
+| `privacy.html` | Privacy policy (linked from the Google sign-in screen) |
 | `firestore.rules` | Each person can read and write only their own plan |

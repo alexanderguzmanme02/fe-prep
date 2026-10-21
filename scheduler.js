@@ -1,5 +1,6 @@
 // Builds a day-by-day FE study schedule from the exam date, weekly availability and busy calendar time.
-import { DATA } from "./data.js";
+import { DATA } from "./data.js?v=2";
+import { MOCK_SOURCE } from "./community.js?v=1";
 
 const MIN = 60000;
 const DAY = 86400000;
@@ -18,16 +19,26 @@ export const DEFAULT_AVAIL = {
 };
 
 const SETUP = [
-  { title: "Kickoff: exam rules + handbook tour", tasks: ["Read the NCEES FE Other Disciplines exam specification (14 areas, 110 questions).", "Download the free FE Reference Handbook from your MyNCEES account and practice Ctrl+F searches.", "Write a one-page chapter → page map of the handbook."] },
-  { title: "Handbook scavenger hunt + calculator setup", tasks: ["Find 5 formulas per chapter and note the page of each.", "Timed drill: 15 lookups in 20 minutes.", "Set up your NCEES-approved calculator (TI-36X Pro: DEG, MathPrint, FLOAT) and learn the solvers."] },
-  { title: "Diagnostic", tasks: ["Cold diagnostic: about 5 problems per topic, handbook only, 3 minutes each.", "Score each topic. This is your baseline."] },
+  { title: "Kickoff: exam rules + handbook tour", videos: ["TOsoTUqEFDM", "cvob3-PUAPc", "vK60NR3Hs2Q"], tasks: ["Read the NCEES FE Other Disciplines exam specification (14 areas, 110 questions).", "Download the free FE Reference Handbook from your MyNCEES account and practice Ctrl+F searches.", "Write a one-page chapter → page map of the handbook."] },
+  { title: "Handbook scavenger hunt + calculator setup", videos: ["LY2fMXhFzzg", "8gDF8cQ1lPY", "YIVJPLJoEs4"], tasks: ["Find 5 formulas per chapter and note the page of each.", "Timed drill: 15 lookups in 20 minutes.", "Set up your NCEES-approved calculator (TI-36X Pro: DEG, MathPrint, FLOAT) and learn the solvers."] },
+  { title: "Diagnostic", videos: ["Z3u3KDT58yA", "JJSufodQT4s"], tasks: ["Cold diagnostic: about 5 problems per topic, handbook only, 3 minutes each.", "Score each topic. This is your baseline."] },
 ];
 
 const REVIEW = [
-  "Weak area: Fluids deep redo", "Weak area: Statics + Dynamics", "Weak area: Strength + Materials",
-  "Weak area: Thermo + Heat Transfer", "Weak area: Math + Stats (calculator speed)", "Weak area: Electrical + Instrumentation",
-  "Weak area: Chemistry + Econ", "Conceptual day: Ethics, Safety, Materials", "Handbook speed race + 40 mixed problems",
+  { title: "Weak area: Fluids deep redo", videos: ["y9MkIEBIWr4"] },
+  { title: "Weak area: Statics + Dynamics", videos: ["9jcl2TJmXe8", "B9rZR-fm6Ko"] },
+  { title: "Weak area: Strength + Materials", videos: ["EgFXI8jbuZ8", "kESjqqv48wU"] },
+  { title: "Weak area: Thermo + Heat Transfer", videos: ["Jw29YdxfKrc", "Eb7MLG3r70k"] },
+  { title: "Weak area: Math + Stats (calculator speed)", videos: ["8gDF8cQ1lPY", "MuYMbkwyDkM"] },
+  { title: "Weak area: Electrical + Instrumentation", videos: ["dKwxV4BvQm8", "Xc8dP0PdC_4"] },
+  { title: "Weak area: Chemistry + Econ", videos: ["on0b1stcYwk", "GUbf0Mz04k4"] },
+  { title: "Conceptual day: Ethics, Safety, Materials", videos: ["14Ecjrjjiyw", "ux1TNVU_TsA"] },
+  { title: "Handbook speed race + 40 mixed problems", videos: ["cvob3-PUAPc"] },
 ];
+const MOCK_VIDEOS = ["NiCValUmw_k"];
+
+// Videos by session title, so plans saved before videos were attached still show them
+export const SESSION_VIDEOS = Object.fromEntries([...SETUP, ...REVIEW].map((x) => [x.title, x.videos]));
 
 export function dayKey(d) {
   const p = (n) => String(n).padStart(2, "0");
@@ -116,7 +127,7 @@ export function buildSchedule({ start, exam, avail, busy = [], doneUnits = new S
   for (const d of days.filter((x) => x.phase !== "practice")) {
     if (d.phase === "setup") {
       const s = SETUP[Math.min(setupIdx++, SETUP.length - 1)];
-      sessions.push({ id: d.key, date: d.key, kind: "setup", title: s.title, tasks: s.tasks, blocks: d.blocks, min: d.min });
+      sessions.push({ id: d.key, date: d.key, kind: "setup", title: s.title, tasks: s.tasks, videos: s.videos, blocks: d.blocks, min: d.min });
       continue;
     }
     const long = d.min >= LONG_DAY_MIN;
@@ -158,20 +169,22 @@ export function buildSchedule({ start, exam, avail, busy = [], doneUnits = new S
       mockNo++;
       const full = d.min >= MOCK_MIN;
       sessions.push({
-        id: d.key, date: d.key, kind: "mock", blocks: d.blocks, min: d.min,
+        id: d.key, date: d.key, kind: "mock", blocks: d.blocks, min: d.min, videos: MOCK_VIDEOS,
         title: full ? `Full practice exam #${mockNo}` : `Half practice exam #${mockNo} (55 questions)`,
         tasks: [full ? "110 questions in 5 h 20 min, with a 25-minute break around question 55." : "55 questions in 2 h 40 min.",
           "Handbook PDF and approved calculator only. No phone.",
-          mockNo === 2 ? "Use the official NCEES FE Other Disciplines practice exam for this one." : "Use problems you haven’t seen, in the official topic proportions.",
+          MOCK_SOURCE(mockNo),
+          "Two passes: answer what you know, flag the rest. Never leave a blank.",
           "Score each topic. Review tomorrow."],
       });
       reviewNext = true;
     } else if (reviewNext) {
       sessions.push({ id: d.key, date: d.key, kind: "review", title: `Review practice exam #${mockNo}`, blocks: d.blocks, min: d.min,
-        tasks: ["Rework every miss and every guess.", "Write the handbook page you should have used.", "Rank your weakest topics by (questions on the exam × % missed)."] });
+        tasks: ["Rework every miss and every guess.", "Write the handbook page you should have used.", "Rank your weakest topics by (questions on the exam × % missed).", "Two scores of 70% or more means you’re ready."] });
       reviewNext = false;
     } else {
-      sessions.push({ id: d.key, date: d.key, kind: "review", title: REVIEW[ri++ % REVIEW.length], blocks: d.blocks, min: d.min,
+      const rv = REVIEW[ri++ % REVIEW.length];
+      sessions.push({ id: d.key, date: d.key, kind: "review", title: rv.title, videos: rv.videos, blocks: d.blocks, min: d.min,
         tasks: ["Redo the error-log problems for this area.", "25–30 new timed problems, 3 minutes each.", "Handbook lookup race: 10 items."] });
     }
   }
@@ -182,13 +195,13 @@ export function buildSchedule({ start, exam, avail, busy = [], doneUnits = new S
     sessions.push({
       id: d.key, date: d.key, kind: "light", blocks: trim(d.blocks, min), min: Math.min(min, d.min),
       title: last ? "Rest + exam-eve checklist" : "Light review",
-      tasks: last ? ["Pack ID and approved calculator.", "Confirm the Pearson VUE time and route; arrive 30 minutes early.", "Light dinner, 8 hours of sleep."]
+      tasks: last ? ["Pack ID and approved calculator.", "Confirm the Pearson VUE time and route; arrive 30 minutes early.", "Pack snacks for the break and wear layers: test centers are cold.", "Light dinner, 8 hours of sleep."]
         : ["Flip through your handbook map and error log. No new material."],
     });
   });
 
   sessions.push({ id: exam, date: exam, kind: "exam", title: "FE Other Disciplines exam", blocks: [], min: 0,
-    tasks: ["First pass: answer what you know in 3 minutes or less, flag the rest.", "Second pass: flagged questions. Never leave a blank.", "Take the scheduled break."] });
+    tasks: ["Breakfast and coffee; arrive 30 minutes early in layers.", "First pass: answer what you know in 3 minutes or less. Skip and flag the hard ones.", "Second pass: flagged questions. Never leave a blank; stuck on a number, pick between the highest and lowest choices.", "Some questions are fill-in-the-blank.", "Take the scheduled break and eat your snack.", "Leftover time: double-check."] });
 
   sessions.sort((a, b) => a.date.localeCompare(b.date));
   return { sessions, totalMin: total + taper.reduce((t, d) => t + Math.min(90, d.min), 0), unitMin, remainingUnits: queue.length };

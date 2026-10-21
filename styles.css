@@ -106,10 +106,33 @@ button.link { border: 0; background: none; padding: 0; color: var(--accent); tex
 .calc td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .calc .key { font-family: var(--mono); font-size: .82rem; color: var(--accent); }
 .calc .pg { font-family: var(--mono); font-size: .82rem; white-space: nowrap; text-align: right; }
-.vids { display: grid; gap: 6px; margin-top: 6px; }
-.vid { display: grid; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); text-decoration: none; color: var(--fg); }
-.vid span::before { content: "▶ "; color: var(--accent); font-size: .75rem; }
-.vid small { font: .74rem var(--mono); color: var(--muted); }
+.vids { display: grid; gap: 8px; margin-top: 8px; }
+.vid { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.vid.playing { grid-template-columns: 1fr; }
+.thumb { position: relative; padding: 0; border: 0; border-radius: 6px; overflow: hidden; aspect-ratio: 16 / 9; background: #000; cursor: pointer; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .play { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 42px; height: 30px; border-radius: 8px; background: rgba(204, 0, 0, .9); color: #fff; display: grid; place-items: center; font-size: .9rem; }
+.thumb .len { position: absolute; right: 4px; bottom: 4px; background: rgba(0, 0, 0, .8); color: #fff; font: .7rem var(--mono); padding: 1px 4px; border-radius: 3px; }
+.thumb:hover .play { background: #c00; }
+.vmeta { display: grid; gap: 2px; min-width: 0; }
+.vmeta b { font-weight: 600; font-size: .92rem; line-height: 1.3; }
+.vmeta small { font: .74rem var(--mono); color: var(--muted); }
+.vmeta a { font-size: .82rem; }
+.player { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 6px; background: #000; }
+@media (max-width: 480px) { .vid { grid-template-columns: 120px minmax(0, 1fr); } }
+.plthumb { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000)); }
+.plthumb .stackico { position: absolute; left: 8px; top: 4px; color: #fff; font-size: 1.4rem; opacity: .85; }
+.vid.pl { border-color: var(--accent); }
+
+/* Advice from people who passed */
+.tips { margin-top: 8px; background: color-mix(in srgb, var(--hl) 30%, var(--paper)); border-radius: 8px; padding: 10px 14px; font-size: .92rem; }
+.tips b { font: 600 .74rem var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+.tips ul { margin: 4px 0 0; padding-left: 18px; }
+.tipl { margin: 0; display: grid; gap: 0; }
+.tipl div { padding: 10px 0; border-top: 1px solid var(--line); }
+.tipl div:first-child { border-top: 0; padding-top: 0; }
+.tipl dt { font-weight: 600; }
+.tipl dd { margin: 2px 0 0; color: var(--muted); font-size: .94rem; }
 
 .week h3 { display: flex; justify-content: space-between; border-bottom: 2px solid var(--fg); padding: 6px 0; font-size: 1rem; }
 .week h3 span { font: 500 .8rem var(--mono); color: var(--accent); }
