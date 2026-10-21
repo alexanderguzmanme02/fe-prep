@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy · FE Prep Planner</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="wrap">
+<h1>Privacy policy</h1>
+<p class="hint">FE Prep Planner · last updated October 21, 2026</p>
+<section class="card">
+<h2>What the site stores</h2>
+<ul>
+<li>Your email address and a password, handled by Google Firebase Authentication. The site never sees your password.</li>
+<li>Your plan: exam date, the hours you said you can study, your study sessions and which ones you checked off.</li>
+<li>Busy time ranges from your calendar (start and end times only), so the plan can be rebuilt around them. No event titles, descriptions, attendees or locations.</li>
+</ul>
+<p>This data lives in Google Cloud Firestore under your account. Security rules let only you read or change it.</p>
+</section>
+<section class="card">
+<h2>Calendar access</h2>
+<ul>
+<li><b>Google Calendar:</b> the site asks for two permissions. <i>calendar.freebusy</i> shows when you are busy, not what the events are. <i>calendar.app.created</i> lets the site create and manage one calendar called “FE Study Plan”. It cannot see or change your other calendars.</li>
+<li><b>Outlook:</b> the site reads the start, end and free/busy status of your events and creates one calendar called “FE Study Plan”.</li>
+<li><b>.ics upload:</b> the file is read in your browser. Only busy start and end times are kept.</li>
+</ul>
+<p>Access tokens stay in your browser for the session and are never stored on a server. Use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.</p>
+</section>
+<section class="card">
+<h2>Sharing</h2>
+<p>Your data is not sold, shared, or used for advertising. There are no analytics or tracking cookies.</p>
+</section>
+<section class="card">
+<h2>Deleting your data</h2>
+<p>To delete your account and plan, email <b>alexander.guzmanme02@gmail.com</b>. To remove calendar access, delete the “FE Study Plan” calendar and revoke the app at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> (Google) or <a href="https://account.live.com/consent/Manage">account.live.com/consent/Manage</a> (Microsoft).</p>
+</section>
+<p><a href="./">← Back to the planner</a></p>
+</main>
+</body>
+</html>

@@ -8,6 +8,6 @@ export const CONFIG = {
     projectId: "fe-other-disciplines-prep",
     appId: "1:686085571792:web:ea4e2de3e19c5986f88ad5",
   },
-  googleClientId: "",    // Google Cloud → APIs & Services → Credentials → OAuth client ID (Web)
+  googleClientId: "686085571792-lsdpdi4u4rk52h5uj87ge2hj3eefs4k7.apps.googleusercontent.com",    // Google Cloud → APIs & Services → Credentials → OAuth client ID (Web)
   microsoftClientId: "", // portal.azure.com → App registrations → Application (client) ID
 };
