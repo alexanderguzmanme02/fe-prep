@@ -46,7 +46,7 @@ nav button[aria-current="true"] { background: var(--accent); color: var(--accent
 .stack { display: grid; gap: 18px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
 .row { display: flex; gap: 10px; align-items: center; }
-.row.wrap { flex-wrap: wrap; }
+.row.wraps { flex-wrap: wrap; }
 .hint, .msg { margin: 0; color: var(--muted); font-size: .92rem; }
 .msg:empty { display: none; }
 .opt { font: 500 .75rem var(--mono); color: var(--muted); text-transform: uppercase; margin-left: 6px; }

@@ -1,5 +1,5 @@
 import { DATA } from "./data.js";
-import { CONFIG } from "./config.js";
+import { CONFIG } from "./settings.js";
 import { DEMO, initStore, signUp, signIn, signOut, resetPassword, loadProfile, saveProfile } from "./store.js";
 import { buildSchedule, finishedUnits, DEFAULT_AVAIL, WEEKDAYS, dayKey, parseDay } from "./scheduler.js";
 import * as cal from "./calendars.js";
@@ -173,7 +173,7 @@ function renderSetup() {
       <section class="card">
         <h2>3 · Work around your calendar <span class="opt">optional</span></h2>
         <p class="hint">The planner reads only when you’re busy, never your event titles, and skips those times.</p>
-        <div class="row wrap">
+        <div class="row wraps">
           <button type="button" id="g-busy" ${CONFIG.googleClientId ? "" : "disabled"}>Connect Google Calendar</button>
           <button type="button" id="o-busy" ${CONFIG.microsoftClientId ? "" : "disabled"}>Connect Outlook</button>
           <label class="button" for="ics">Upload .ics file</label><input id="ics" type="file" accept=".ics,text/calendar" hidden>
@@ -296,7 +296,7 @@ function renderToday() {
     <section class="card">
       <h2>Put the plan on your calendar</h2>
       <p class="hint">Creates a separate calendar called “FE Study Plan”, so it never mixes with your own events. Running it again replaces it with the latest plan.</p>
-      <div class="row wrap">
+      <div class="row wraps">
         <button type="button" data-sync="google" ${CONFIG.googleClientId ? "" : "disabled"}>Google Calendar</button>
         <button type="button" data-sync="outlook" ${CONFIG.microsoftClientId ? "" : "disabled"}>Outlook</button>
         <button type="button" data-sync="ics">Download .ics (Apple, any app)</button>

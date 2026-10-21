@@ -1,6 +1,6 @@
 // Accounts and saved plans. Uses Firebase (email + password) when config.js has keys,
 // otherwise a demo mode that keeps one profile in this browser.
-import { CONFIG } from "./config.js";
+import { CONFIG } from "./settings.js";
 
 export const DEMO = !CONFIG.firebase?.apiKey;
 const FB = "https://www.gstatic.com/firebasejs/10.12.2";
