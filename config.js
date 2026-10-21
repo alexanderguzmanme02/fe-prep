@@ -3,10 +3,10 @@
 // Leave firebase.apiKey empty to run in demo mode (no accounts, saves in this browser only).
 export const CONFIG = {
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    appId: "",
+    apiKey: "AIzaSyDA2m53nwjS12oGjBJtAmAXfzeKQkAUoNI",
+    authDomain: "fe-other-disciplines-prep.firebaseapp.com",
+    projectId: "fe-other-disciplines-prep",
+    appId: "1:686085571792:web:ea4e2de3e19c5986f88ad5",
   },
   googleClientId: "",    // Google Cloud → APIs & Services → Credentials → OAuth client ID (Web)
   microsoftClientId: "", // portal.azure.com → App registrations → Application (client) ID
