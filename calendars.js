@@ -80,8 +80,9 @@ const MS_SCOPES = ["Calendars.ReadWrite"];
 const GRAPH = "https://graph.microsoft.com/v1.0";
 let msalApp;
 
-export async function outlookToken(clientId) {
-  await loadScript("https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js");
+async function msalReady(clientId) {
+  await loadScript("https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js");
+  if (!window.msal?.PublicClientApplication) throw new Error("Microsoft sign-in didn’t load. Check your connection and try again.");
   if (!msalApp) {
     msalApp = new window.msal.PublicClientApplication({
       auth: { clientId, authority: "https://login.microsoftonline.com/common", redirectUri: location.origin + location.pathname },
@@ -89,12 +90,21 @@ export async function outlookToken(clientId) {
     });
     if (msalApp.initialize) await msalApp.initialize();
   }
-  const account = msalApp.getAllAccounts()[0];
-  if (account) {
-    try { return (await msalApp.acquireTokenSilent({ scopes: MS_SCOPES, account })).accessToken; } catch { /* fall through to popup */ }
+}
+
+// pick: always show the account chooser, so work and personal accounts can each be added.
+// Returns { token, user } where user is the Microsoft account's email.
+export async function outlookToken(clientId, pick = false) {
+  await msalReady(clientId);
+  const accounts = msalApp.getAllAccounts();
+  if (!pick && accounts.length === 1) {
+    try {
+      const r = await msalApp.acquireTokenSilent({ scopes: MS_SCOPES, account: accounts[0] });
+      return { token: r.accessToken, user: accounts[0].username };
+    } catch { /* fall through to popup */ }
   }
   const r = await msalApp.loginPopup({ scopes: MS_SCOPES, prompt: "select_account" });
-  return r.accessToken;
+  return { token: r.accessToken, user: r.account?.username || "Outlook" };
 }
 
 export async function outlookBusy(token, from, to) {

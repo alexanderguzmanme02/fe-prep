@@ -72,6 +72,12 @@ button.link { border: 0; background: none; padding: 0; color: var(--accent); tex
 .chk.big { font-size: 1rem; padding-top: 6px; }
 .chk input { width: 20px; height: 20px; accent-color: var(--accent); }
 
+.sources { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; }
+.sources li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 12px; border-top: 1px solid var(--line); }
+.sources li:first-child { border-top: 0; }
+.sources .src { font-weight: 600; overflow-wrap: anywhere; }
+.sources .cnt { font: .8rem var(--mono); color: var(--muted); }
+.sources button { margin-left: auto; }
 .tw { overflow-x: auto; }
 .avail { border-collapse: collapse; width: 100%; min-width: 520px; }
 .avail th { text-align: left; font: 500 .75rem var(--mono); color: var(--muted); text-transform: uppercase; padding: 4px 6px; }
